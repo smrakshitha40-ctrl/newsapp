@@ -5,7 +5,7 @@ export default class News extends Component {
   constructor() {
     super();
     this.state = {
-      articles: [],
+      articles: data.data || [],
       loading: false,
       page: 1
     }
@@ -13,15 +13,22 @@ export default class News extends Component {
 
   fetchNews = async (page = 1) => {
     const pageSize = 9;
-    const url = `https://newsapi.org/v2/everything?q=tesla&from=2026-01-16&sortBy=publishedAt&page=${page}&pageSize=${pageSize}&apiKey=14071ddfa9bb4502873f3748d6fc42ec`;
+    const url = `https://newsapi.org/v2/everything?q=tesla&sortBy=publishedAt&page=${page}&pageSize=${pageSize}&apiKey=14071ddfa9bb4502873f3748d6fc42ec`;
     try {
       this.setState({ loading: true });
       const res = await fetch(url);
       const data = await res.json();
-      this.setState({ articles: data.articles || [], loading: false, page });
+      console.log('API Response:', data);
+      if (data.status === 'error') {
+        console.error('API Error:', data.message);
+        this.setState({ loading: false, articles: [] });
+      } else {
+        console.log('Articles fetched:', data.articles ? data.articles.length : 0);
+        this.setState({ articles: data.articles || [], loading: false, page });
+      }
     } catch (err) {
-      console.error(err);
-      this.setState({ loading: false });
+      console.error('Fetch error:', err);
+      this.setState({ loading: false, articles: [] });
     }
   }
 
@@ -43,6 +50,8 @@ export default class News extends Component {
     return (
       <div className="container my-3">
         <h1 className="text-center mb-5"> My News Top Headlines</h1>
+        {this.state.loading && <p className="text-center">Loading...</p>}
+        {!this.state.loading && this.state.articles.length === 0 && <p className="text-center text-danger">No articles found. Check console for errors.</p>}
         <div className="row g-4">
           {this.state.articles && this.state.articles.map(element=> {
             return (
@@ -51,7 +60,7 @@ export default class News extends Component {
                   title={element.title?element.title.slice(0,50):''}
                   description={element.description?element.description.slice(0,100):''}
                   imageUrl={element.urlToImage}
-                  newsUrl={element.url}
+                  newsUrl={element.readMoreUrl}
                 />
               </div>
             )
